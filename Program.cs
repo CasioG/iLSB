@@ -17,6 +17,7 @@ namespace iLSB
             double longueurBarre;
             double longueurPiece;
             int listeParametres = args.Length;
+            string erreurMessage = "L'information passé en paramètre n'est pas valide";
 
             LireEtAppliquerConfiguration();
 
@@ -31,7 +32,8 @@ namespace iLSB
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("L'information passé en paramètre n'est pas valide");
+                        Clipboard.SetText(erreurMessage);
+                        Console.WriteLine(erreurMessage);
                         break;
                     }
                     break;
@@ -44,7 +46,8 @@ namespace iLSB
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Les informations passés en paramètres ne sont pas valides");
+                        Clipboard.SetText(erreurMessage);
+                        Console.WriteLine(erreurMessage);
                         break;
                     }
                     break;
