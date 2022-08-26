@@ -26,7 +26,7 @@ namespace iLSB
                 case 1:
                     try
                     {
-                        longueurPiece = double.Parse(args[0]);
+                        longueurPiece = ObtenirLongueurPieceEnPouces(args[0]);
                         longueurBarre = LONGUEUR_STD;
                         RealiserCalculEtEnvoyerClipboard(longueurBarre, longueurPiece);
                     }
@@ -40,7 +40,7 @@ namespace iLSB
                 case 2:
                     try
                     {
-                        longueurPiece = double.Parse(args[0]);
+                        longueurPiece = ObtenirLongueurPieceEnPouces(args[0]);
                         longueurBarre = double.Parse(args[1]);
                         RealiserCalculEtEnvoyerClipboard(longueurBarre, longueurPiece);
                     }
@@ -62,29 +62,39 @@ namespace iLSB
         public static void RealiserCalculEtEnvoyerClipboard(double barre, double piece)
         {
             piece = piece + TRONCONNAGE + FACAGE;
-            int piecesParBarre = (int)Math.Floor((barre - PRISE) / piece);
-            int piecesParTroisQuartsBarre = (int)Math.Floor((barre * 3 / 4 - PRISE) / piece);
-            int piecesDemiBarre = (int)Math.Floor((barre * 1 / 2 - PRISE) / piece);
-            int piecesUnQuartBarre = (int)Math.Floor((barre * 1 / 4 - PRISE) / piece);
-            double troisQuartDeBarreOptimize = Math.Round(((piecesParTroisQuartsBarre * piece) + PRISE) * 8, MidpointRounding.AwayFromZero) / 8;
-            double demiBarreOptimize = Math.Round(((piecesDemiBarre * piece) + PRISE) * 8, MidpointRounding.AwayFromZero) / 8;
-            double quartDeBarreOptimize = Math.Round(((piecesUnQuartBarre * piece) + PRISE) * 8, MidpointRounding.AwayFromZero) / 8;
+
+            int[] piecesParBarre = new int[4];
+            for (int i = 0; i < piecesParBarre.Length; i++)
+            {
+                int quantiteParBarre = (int)Math.Floor((barre * (4 - i) / 4 - PRISE) / piece);
+                if (quantiteParBarre <= 0)
+                    quantiteParBarre = 0;
+                piecesParBarre[i] = quantiteParBarre;
+            }
+
+            double[] dimensionBarreOpmizer = new double[4];
+            for (int i = 0; i < dimensionBarreOpmizer.Length; i++)
+            {
+                dimensionBarreOpmizer[i] = Math.Round(((piecesParBarre[i] * piece) + PRISE) * 8, MidpointRounding.AwayFromZero) / 8;
+            }
 
             //Partie std
-            string result = $"****** RESULTAT STANDARD ******\n" +
-                $"Barre de {barre} pouces\tfait {piecesParBarre} pièces\n" +
-                $"Barre de {barre * 3 / 4} pouces\tfait {piecesParTroisQuartsBarre} pièces\n" +
-                $"Barre de {barre * 1 / 2} pouces\tfait {piecesDemiBarre} pièces\n" +
-                $"Barre de {barre * 1 / 4} pouces\tfait {piecesUnQuartBarre} pièces\n\n";
+            string result = $"****** RESULTAT STANDARD ******\n";
+            for (int i = 0; i < piecesParBarre.Length; i++)
+            {
+                if (piecesParBarre[i] > 0)
+                    result += $"Barre de {barre * (4 - i) / 4} pouces\tfait {piecesParBarre[i]} pièces\n";
+            }
 
             //Partie optimizé
-            result += $"****** RESULTAT OPTIMIZER ******\n" +
-                $"Barre de {barre} pouces\tfait {piecesParBarre} pièces\n" +
-                $"Barre de {troisQuartDeBarreOptimize} pouces\tfait {piecesParTroisQuartsBarre} pièces\n" +
-                $"Barre de {demiBarreOptimize} pouces\tfait {piecesDemiBarre} pièces\n" +
-                $"Barre de {quartDeBarreOptimize} pouces\tfait {piecesUnQuartBarre} pièces\n\n";
+            result += $"\n****** RESULTAT OPTIMIZER ******\n";
+            for (int i = 0; i < dimensionBarreOpmizer.Length; i++)
+            {
+                if (piecesParBarre[i] > 0)
+                    result += $"Barre de {dimensionBarreOpmizer[i]} pouces\tfait {piecesParBarre[i]} pièces\n";
+            }
 
-            result += $"Formule: ( quantité a produire x {piece} ) + {PRISE}";
+            result += $"\nFormule: ( quantité a produire x {piece} ) + {PRISE}";
 
             Clipboard.SetText(result);
             Console.WriteLine(result);
@@ -92,12 +102,31 @@ namespace iLSB
 
         public static double GetInputUtilisateur(string info)
         {
+            double facteurMetriquePouce = 1;
             double inputUtilisateur;
+            bool piece = false;
+            string input;
+
+            if (info == "pièce")
+                piece = true;
+
             do
             {
                 Console.Write($"Saisir la dimension de la {info} en pouces: ");
-            } while (!double.TryParse(Console.ReadLine(), out inputUtilisateur));
-            return inputUtilisateur;
+                input = Console.ReadLine();
+
+                if (piece)
+                {
+                    if (input.Contains("mm"))
+                    {
+                        input = input.Replace("mm", "").Trim();
+                        facteurMetriquePouce = 1 / 25.4;
+                    }
+                    else
+                        input = input.Trim();
+                }
+            } while (!double.TryParse(input, out inputUtilisateur));
+            return inputUtilisateur * facteurMetriquePouce;
         }
 
         public static void LireEtAppliquerConfiguration()
@@ -106,7 +135,7 @@ namespace iLSB
             string fichierConfiguration = "appsettings.json";
             string cheminComplet = Path.Combine(pathExecutable, fichierConfiguration);
 
-            if(!File.Exists(cheminComplet))
+            if (!File.Exists(cheminComplet))
             {
                 File.WriteAllText(cheminComplet, "{\r\n  \"prise\": \"2\",\r\n  \"tronconnage\": \"0.125\",\r\n  \"facage\": \"0.03\",\r\n  \"longueur_std\": \"36\"\r\n}");
             }
@@ -120,6 +149,32 @@ namespace iLSB
             TRONCONNAGE = Convert.ToDouble(configuration["tronconnage"]);
             FACAGE = Convert.ToDouble(configuration["facage"]);
             LONGUEUR_STD = Convert.ToInt16(configuration["longueur_std"]);
+        }
+
+        public static double ObtenirLongueurPieceEnPouces(string s_piece)
+        {
+            double facteurMetriquePouce;
+            double piece;
+            if (s_piece.Contains("mm"))
+            {
+                s_piece = s_piece.Replace("mm", "").Trim();
+                facteurMetriquePouce = 1 / 25.4;
+            }
+            else
+            {
+                s_piece = s_piece.Trim();
+                facteurMetriquePouce = 1;
+            }
+            try
+            {
+                piece = double.Parse(s_piece) * facteurMetriquePouce;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+
+            return piece;
         }
     }
 }
