@@ -131,9 +131,7 @@ namespace iLSB
 
         public static void LireEtAppliquerConfiguration()
         {
-            string pathExecutable = Directory.GetParent(AppContext.BaseDirectory).FullName;
-            string fichierConfiguration = "appsettings.json";
-            string cheminComplet = Path.Combine(pathExecutable, fichierConfiguration);
+            string cheminComplet = "appsettings.json";
 
             if (!File.Exists(cheminComplet))
             {
@@ -141,7 +139,6 @@ namespace iLSB
             }
 
             IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetParent(AppContext.BaseDirectory).FullName)
                 .AddJsonFile("appsettings.json", false)
                 .Build();
 
