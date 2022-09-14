@@ -131,14 +131,18 @@ namespace iLSB
 
         public static void LireEtAppliquerConfiguration()
         {
-            string cheminComplet = "appsettings.json";
+            string pathFichierConfig = "C:\\Users\\Public\\Documents\\APPDATA";
+            string fichierConfig = "appsettings.json";
+            string cheminComplet = Path.Combine(pathFichierConfig, fichierConfig);
 
             if (!File.Exists(cheminComplet))
             {
+                Directory.CreateDirectory(pathFichierConfig);
                 File.WriteAllText(cheminComplet, "{\r\n  \"prise\": \"2\",\r\n  \"tronconnage\": \"0.125\",\r\n  \"facage\": \"0.03\",\r\n  \"longueur_std\": \"36\"\r\n}");
             }
 
             IConfigurationRoot configuration = new ConfigurationBuilder()
+                .SetBasePath(pathFichierConfig)
                 .AddJsonFile("appsettings.json", false)
                 .Build();
 
